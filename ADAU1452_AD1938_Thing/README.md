@@ -29,6 +29,37 @@ Power consumption (ADAU+AD1839) 466mA @ 5V
 | MP13 | Green | YES |
 
 
+### Programming Experience
+
+Things I did first:
+* Solder in the useless selfboot jumper and set it to not self boot. (Because I managed to "clear" the flash and it started something strange) So now after power up, not much happens (LED goes on dimmed ? Which outputs are on MP11-13? Thats all LRCLK-In[1-3] ok then this should duty cycle somehow.)
+* Removed the Jumper on the CODEC in hope to get this into some kind of 48kHz TDM mode.
+
+Mhm yes SigmaStudio managed to download a programm via SPI. It lights up the LEDs and produces distorted audio.
+
+Did not figure out the correct I2S port settings. DAC seems to do after setting it to LeftJustified format.. Is that because the CODEC register 0x02 was set to 0x44 - it's a SDATA offset of 0 ?? Why ??? Is I2S bad?
+
+Getting the CODEC to work with these settings...
+* CLOCK_CONTROL / M for Clock Gen 1: 6
+
+* SERIAL_PORTS 
+
+    ![b1](./images/Screenshot%202024-07-25%20155907.png)
+    ![b2](./images/Screenshot%202024-07-25%20155940.png)
+
+Witing to Flash mem failed at first but is doing things anyway ? Unable to boot usefull stuff. Original content seems to be gonesky.
+
+#### Progress 1.
+
+* Configured the TOS SPDIF input, this can be read in the 1452 EVAL board docu by ADI. This works. 
+* Aaaand it outputs to the DAC. Buuuuut, with full volume it distorts ! Is that an analog problem ??? So without the 
+
+#### Todo
+
+* Program SPI FLASH !?
+
+
+
 ## CODEC AD1938
 
 This needs the 3.3V from the DSP board because it does not have it's own regulator.
@@ -67,42 +98,15 @@ Column 3 is the difference when all are connected = all grounded. TODO!
 
 Hmm some values look kind'o messi. Would I like to unsolder that chip and ground all control pins to get the default config ??? I think then it needs a MCLK, which is not on the board. :-( the ADI eval board the ctl pins all grounded and MCLK is driven by MCLK out from the DSP. This could work.
 
-### OpAmps ?
+### Analog Problem ?
 
-WQFN marking: ```ovii TI541```  or  ```OVII TI521``` ???
-
-
-
-
-
-
-
-## Programming Experience
-
-Things I did first:
-* Solder in the useless selfboot jumper and set it to not self boot. (Because I managed to "clear" the flash and it started something strange) So now after power up, not much happens (LED goes on dimmed ? Which outputs are on MP11-13? Thats all LRCLK-In[1-3] ok then this should duty cycle somehow.)
-* Removed the Jumper on the CODEC in hope to get this into some kind of 48kHz TDM mode.
-
-Mhm yes SigmaStudio managed to download a programm via SPI. It lights up the LEDs and produces distorted audio.
-
-Did not figure out the correct I2S port settings. DAC seems to do after setting it to LeftJustified format.. Is that because the CODEC register 0x02 was set to 0x44 - it's a SDATA offset of 0 ?? Why ??? Is I2S bad?
-
-Witing to Flash mem failed at first but is doing things anyway ? Unable to boot usefull stuff. Original content seems to be gonesky.
-
-### Progress 1.
-
-* Configured the TOS SPDIF input, this can be read in the 1452 EVAL board docu by ADI. This works. 
-* Aaaand it outputs to the DAC. Buuuuut, with full volume it distorts ! Is that an analog problem ??? So without the 
-
-#### Analog Problem ?
-
-CODEC docs say: Full-Scale Output Voltage 0.88 (2.48) V rms (V p-p). What comes out then ? Meassuring... so I added an Signalsource which outputs a sinus with 1kHz @ 0db - should draw a nice sinus with 2.48Vpp at the output right ?
+CODEC docs say: Full-Scale Output Voltage 0.88 Vrms (2.48 Vp-p). What comes out then ? Meassuring... so I added an Signalsource which outputs a sinus with 1kHz @ 0db - should draw a nice sinus with 2.48Vpp at the output right ?
 
 | | What | Value |
 |---|---|---|
 | DAC out | Vp-p | 1.94 V |
 
-Looks exactly like a sinus right? Grr what the hack...
+Looks exactly like a sinus right? GRRR what the hack...
 
 ![DAC output @ 1k,sin,0db](./images/IMG_1079%20(Small).png)
 
@@ -123,6 +127,19 @@ How the out stage should look like...
 ![output](./images/OutputOpAmps.png)
 
 The OpAmp circuit is similar to the official EVAL board.. FILTER and CM pins have 1.6V, DAC outputs are 1.5V Should be ok, right ?
+
+#### OpAmps ?
+
+Installed ones: WQFN marking: ```ovii TI541```  or  ```OVII TI521``` ???
+
+Replaced with MCP6002 RailToRail types, **works**. :-P
+
+### Problems ?
+
+* CODEC Will not always start up.
+
+
+
 
 
 # Moans and Nickls !?
